@@ -1,3 +1,4 @@
+
 // Winter'24
 // Instructor: Diba Mirza
 // Student name: Ashvik Vivekan
@@ -23,23 +24,23 @@ bool parseLine(string &line, string &movieName, double &movieRating);
 int main(int argc, char** argv){
     if (argc < 2){
         cerr << "Not enough arguments provided (need at least 1 argument)." << endl;
-        cerr << "Usage: " << argv[ 0 ] << " moviesFilename prefixFilename " << endl;
+        cerr << "Usage: " << argv[0] << " moviesFilename prefixFilename " << endl;
         exit(1);
     }
 
-    ifstream movieFile (argv[1]);
- 
+    ifstream movieFile(argv[1]);
+
     if (movieFile.fail()){
         cerr << "Could not open file " << argv[1];
         exit(1);
     }
-  
+
     set<movies> list;
 
     string line, movieName;
     double movieRating;
-    // Read each file and store the name and rating
-    while (getline (movieFile, line) && parseLine(line, movieName, movieRating)){
+
+    while (getline(movieFile, line) && parseLine(line, movieName, movieRating)){
         list.insert(movies(movieName, movieRating));
     }
 
@@ -52,39 +53,42 @@ int main(int argc, char** argv){
         return 0;
     }
 
-    ifstream prefixFile (argv[2]);
+    ifstream prefixFile(argv[2]);
 
-    if (prefixFile.fail()) {
+    if (prefixFile.fail()){
         cerr << "Could not open file " << argv[2];
         exit(1);
     }
 
     vector<string> prefixes;
-    while (getline (prefixFile, line)) {
-        if (!line.empty()) {
+
+    while (getline(prefixFile, line)){
+        if (!line.empty()){
             prefixes.push_back(line);
         }
     }
 
-    //  For each prefix,
-    //  Find all movies that have that prefix and store them in an appropriate data structure
-    //  If no movie with that prefix exists print the following message
+    prefixFile.close();
 
     vector<movies> bestMovies;
     vector<bool> found;
 
-    for (const string& s : prefixes){
+    for (string s : prefixes){
         vector<movies> matches;
-        auto it = list.lower_bound(movies(s, 0));
 
-        while (it != list.end() && it->name.find(s) == 0){
-            matches.push_back(*it);
+        auto it = list.lower_bound(movies(s.substr(0, 1), 0));
+
+        while (it != list.end() && it->name.compare(0, 1, s, 0, 1) == 0){
+            if (it->name.find(s) == 0){
+                matches.push_back(*it);
+            }
             ++it;
         }
 
-        sort(matches.begin(), matches.end(), [](const movies& a, const movies& b) {
-            if (a.rating == b.rating)
+        sort(matches.begin(), matches.end(), [](const movies& a, const movies& b){
+            if (a.rating == b.rating){
                 return a.name < b.name;
+            }
             return a.rating > b.rating;
         });
 
@@ -111,6 +115,7 @@ int main(int argc, char** argv){
                  << fixed << setprecision(1) << bestMovies[i].rating << endl;
         }
     }
+
     return 0;
 }
 
@@ -118,49 +123,78 @@ int main(int argc, char** argv){
 /*
 Part 3a: Time Complexity
 
-For each of m prefixes, I search n movies, taking O(mnl).
-I sort up to k matches per prefix, taking O(mkl log k).
-Printing all matches takes O(mkl).
-Finding the best movie takes O(m) using the first element.
+Building the set of n movies takes O(n log n).
 
-Total: O(mnl + mkl log(k+1))
+For each prefix, lower_bound finds the first movie with
+the same starting character in O(log n).
+
+I then check each movie beginning with that character
+to see if its name matches the entire prefix.
+
+If c movies share the first character and k match
+the prefix, searching takes O(log n + c).
+
+Sorting the matching movies takes O(k log(k+1)).
+Printing the matches takes O(k).
+
+Total: O(n log n + m log n + sum(c + k log(k+1))).
 
 Runtimes using prefix_large.txt:
-20 movies: 20 ms
-100 movies: 40 ms
-1000 movies: 450 ms
-76920 movies: 79690 ms
+20 movies: 0.01 seconds
+100 movies: 0.01 seconds
+1000 movies: 0.02 seconds
+76920 movies: 2.25 seconds
 
-Runtime increases as n increases
+Runtime using prefix_medium.txt:
+76920 movies: 0.13 seconds
+
+The runtime increases with the number of movies and
+prefixes. The large prefix list takes longer because
+more searches and comparisons are performed.
+
 
 Part 3b: Space Complexity
 
-I store up to k movies for each of m prefixes.
-Each movie name has at most l characters.
+The set stores n movies.
+The current prefix stores up to k matching movies.
+The best movie results and match flags require O(m) space.
 
-Total additional space: O(mkl)
+Total: O(n + m + k), excluding string storage.
 
 
 Part 3c: Time/Space Tradeoffs
 
-I designed my algorithm to sort movies by rating and
-alphabetically for ties, making the best movie easy to find.
+I kept my original approach of checking movie names
+and sorting matching movies by rating, using
+alphabetical order to break ties.
 
-My target was O(mnl + mkl log(k+1)) time and O(mkl) space.
-I achieved both targets, but scanning all n movies for
-each prefix makes the algorithm slower for large datasets.
+I improved the runtime by using lower_bound to skip
+movies that do not begin with the prefix's first letter.
 
-Improving time complexity would require a faster
-prefix-search method, such as lower_bound().
+This reduces unnecessary comparisons while still
+checking individual movie names for each prefix.
+
+My algorithm uses additional memory to store matching
+movies and the best movie for each prefix, but avoids
+searching the entire set for every prefix.
+
+The runtime for 76920 movies with the medium prefix
+list was 0.13 seconds, compared to 2.25 seconds with
+the large prefix list.
+
+This shows that the number of prefixes affects the
+runtime, while the first-character search helps
+reduce unnecessary work.
 */
 
-
-bool parseLine(string &line, string &movieName, double &movieRating) {
+bool parseLine(string &line, string &movieName, double &movieRating){
     int commaIndex = line.find_last_of(",");
     movieName = line.substr(0, commaIndex);
-    movieRating = stod(line.substr(commaIndex+1));
-    if (movieName[0] == '\"') {
+    movieRating = stod(line.substr(commaIndex + 1));
+
+    if (movieName[0] == '"'){
         movieName = movieName.substr(1, movieName.length() - 2);
     }
+
     return true;
 }

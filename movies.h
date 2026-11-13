@@ -6,7 +6,7 @@ struct movies
     std::string name;
     double rating;
 
-    movies() : name(nullptr),rating(0){}
+    movies() : name(""),rating(0){}
     movies(std::string n, double r) : name(n),rating(r){}
 };
 
