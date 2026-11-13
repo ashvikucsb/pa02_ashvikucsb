@@ -1,6 +1,6 @@
 // Winter'24
 // Instructor: Diba Mirza
-// Student name: 
+// Student name: Ashvik Vivekan
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -70,37 +70,90 @@ int main(int argc, char** argv){
     //  Find all movies that have that prefix and store them in an appropriate data structure
     //  If no movie with that prefix exists print the following message
 
-    set<movies> prelist;
+    vector<vector<movies>> prelist;
+    int ctr = 0;
 
-    for (string s : prefixes)
-    {
+    for (string s : prefixes){
+        prelist.push_back(vector<movies>());
         for(movies movie : list){
             if (movie.name.find(s)==0){
-                prelist.insert(movie);
+                prelist[ctr].push_back(movie);
             }
         }
+        sort(prelist[ctr].begin(), prelist[ctr].end(), [](const movies& a, const movies& b) {
+            if (a.rating == b.rating)
+                return a.name < b.name;
+            return a.rating > b.rating;
+        });
+        ctr++;
+    }
+
+    for (vector<movies> n : prelist){
+        for (movies movie: n){
+            cout << movie << endl;
+        }
+        cout << endl;
     }
     
     if (prelist.empty()) cout << "No movies found with prefix "<<"<replace with prefix>" << endl;
 
-    //  For each prefix,
+    //  For each prefix
     //  Print the highest rated movie with that prefix if it exists.
-    int max = 0;
-    for (string s : prefixes)
-    {
-        for(movies movie : prelist){
-            if (movie.name.find(s)==0){
-                
-            }
+    
+    for (int i = 0; i < prefixes.size(); i++){
+        if (prelist[i].empty()){
+            cout << "No movies found with prefix " << prefixes[i] << endl;
+        }
+        else {
+            movies maxmov = prelist[i][0];
+            cout << "Best movie with prefix " << prefixes[i] << " is: "
+                << maxmov.name << " with rating "
+                << fixed << setprecision(1) << maxmov.rating << endl;
         }
     }
-
-    cout << "Best movie with prefix " << "<replace with prefix>" << " is: " << "replace with movie name" << " with rating " << std::fixed << std::setprecision(1) << "replace with movie rating" << endl;
-
     return 0;
 }
 
-/* Add your run time analysis for part 3 of the assignment here as commented block*/
+/*
+Part 3a: Time Complexity
+
+For each of m prefixes, I search n movies, taking O(mnl).
+I sort up to k matches per prefix, taking O(mkl log k).
+Printing all matches takes O(mkl).
+Finding the best movie takes O(m) using the first element.
+
+Total: O(mnl + mkl log(k+1))
+
+Runtimes using prefix_large.txt:
+20 movies: 20 ms
+100 movies: 40 ms
+1000 movies: 450 ms
+76920 movies: 79690 ms
+
+Runtime increases as n increases, matching the expected trend.
+
+
+Part 3b: Space Complexity
+
+I store up to k movies for each of m prefixes.
+Each movie name has at most l characters.
+
+Total additional space: O(mkl)
+
+
+Part 3c: Time/Space Tradeoffs
+
+I designed my algorithm to sort movies by rating and
+alphabetically for ties, making the best movie easy to find.
+
+My target was O(mnl + mkl log(k+1)) time and O(mkl) space.
+I achieved both targets, but scanning all n movies for
+each prefix makes the algorithm slower for large datasets.
+
+Improving time complexity would require a faster
+prefix-search method, such as lower_bound().
+*/
+
 
 bool parseLine(string &line, string &movieName, double &movieRating) {
     int commaIndex = line.find_last_of(",");

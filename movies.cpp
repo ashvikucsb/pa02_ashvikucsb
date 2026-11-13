@@ -10,3 +10,5 @@ ostream& operator<<(ostream& os, const movies& movie) {
 bool operator<(const movies& curr, const movies& ri){
     return curr.name < ri.name;
 }
+
+
