@@ -70,49 +70,50 @@ int main(int argc, char** argv){
     //  Find all movies that have that prefix and store them in an appropriate data structure
     //  If no movie with that prefix exists print the following message
 
-    vector<vector<movies>> prelist;
-    int ctr = 0;
+    vector<movies> bestMovies;
+    vector<bool> found;
 
-    for (string s : prefixes){
-        prelist.push_back(vector<movies>());
-        for(movies movie : list){
-            if (movie.name.find(s)==0){
-                prelist[ctr].push_back(movie);
-            }
+    for (const string& s : prefixes){
+        vector<movies> matches;
+        auto it = list.lower_bound(movies(s, 0));
+
+        while (it != list.end() && it->name.find(s) == 0){
+            matches.push_back(*it);
+            ++it;
         }
-        sort(prelist[ctr].begin(), prelist[ctr].end(), [](const movies& a, const movies& b) {
+
+        sort(matches.begin(), matches.end(), [](const movies& a, const movies& b) {
             if (a.rating == b.rating)
                 return a.name < b.name;
             return a.rating > b.rating;
         });
-        ctr++;
-    }
 
-    for (vector<movies> n : prelist){
-        for (movies movie: n){
-            cout << movie << endl;
-        }
-        cout << endl;
-    }
-    
-    if (prelist.empty()) cout << "No movies found with prefix "<<"<replace with prefix>" << endl;
-
-    //  For each prefix
-    //  Print the highest rated movie with that prefix if it exists.
-    
-    for (int i = 0; i < prefixes.size(); i++){
-        if (prelist[i].empty()){
-            cout << "No movies found with prefix " << prefixes[i] << endl;
+        if (matches.empty()){
+            found.push_back(false);
+            bestMovies.push_back(movies("", 0));
+            cout << "No movies found with prefix " << s << endl;
         }
         else {
-            movies maxmov = prelist[i][0];
+            found.push_back(true);
+            bestMovies.push_back(matches[0]);
+
+            for (const movies& movie : matches){
+                cout << movie << endl;
+            }
+            cout << endl;
+        }
+    }
+
+    for (int i = 0; i < prefixes.size(); i++){
+        if (found[i]){
             cout << "Best movie with prefix " << prefixes[i] << " is: "
-                << maxmov.name << " with rating "
-                << fixed << setprecision(1) << maxmov.rating << endl;
+                 << bestMovies[i].name << " with rating "
+                 << fixed << setprecision(1) << bestMovies[i].rating << endl;
         }
     }
     return 0;
 }
+
 
 /*
 Part 3a: Time Complexity
@@ -130,8 +131,7 @@ Runtimes using prefix_large.txt:
 1000 movies: 450 ms
 76920 movies: 79690 ms
 
-Runtime increases as n increases, matching the expected trend.
-
+Runtime increases as n increases
 
 Part 3b: Space Complexity
 
